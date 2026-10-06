@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Структура IFC — мини-справочник</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#1c2330; --muted:#667085; --line:#dfe3ea;
+  --accent:#2f6fde; --accent-bg:#e8f0fe; --yes:#1a7f4b; --yes-bg:#e3f5ea; --no:#8a5a00; --no-bg:#fdf1d8;
+  --code:#f0f2f6;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14171c; --panel:#1c2027; --ink:#e6e9ef; --muted:#98a2b3; --line:#2c323c;
+    --accent:#7aa7ff; --accent-bg:#22304d; --yes:#6fd69b; --yes-bg:#1b3527; --no:#f0c36a; --no-bg:#3a2e12;
+    --code:#252a33;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 16px 8px;max-width:1200px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}
+header p{margin:0;color:var(--muted)}
+.tabs{display:flex;gap:8px;max-width:1200px;margin:12px auto 0;padding:0 16px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:8px;font:inherit;cursor:pointer}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:1200px;margin:12px auto 40px;padding:0 16px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.sticky{position:sticky;top:12px}
+@media (max-width:820px){.sticky{position:static}}
+.tree{font-family:ui-monospace,Consolas,Menlo,monospace;font-size:13.5px}
+.tree ul{list-style:none;margin:0;padding-left:18px;border-left:1px dashed var(--line)}
+.tree>ul{padding-left:0;border-left:0}
+.row{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:6px;cursor:pointer;flex-wrap:wrap}
+.row:hover{background:var(--code)}
+.row.sel{background:var(--accent-bg);outline:1px solid var(--accent)}
+.tw{width:14px;color:var(--muted);flex:none;text-align:center;user-select:none}
+.ru{font-family:system-ui,sans-serif;color:var(--muted);font-size:12.5px}
+.b{font-family:system-ui,sans-serif;font-size:11px;padding:1px 6px;border-radius:10px;white-space:nowrap}
+.b.y{background:var(--yes-bg);color:var(--yes)}
+.b.n{background:var(--no-bg);color:var(--no)}
+li.closed>ul{display:none}
+h2{font-size:18px;margin:0 0 2px}
+.sub{color:var(--muted);margin:0 0 10px}
+code,pre{font-family:ui-monospace,Consolas,Menlo,monospace;background:var(--code);border-radius:6px}
+code{padding:1px 5px;font-size:13px}
+pre{padding:10px;overflow:auto;font-size:12.5px;margin:10px 0 0;white-space:pre-wrap;word-break:break-word}
+.note{border-left:3px solid var(--accent);padding:6px 10px;background:var(--accent-bg);border-radius:0 8px 8px 0;margin:10px 0 0}
+.key ul{margin:6px 0 0;padding-left:18px}
+.key li{margin:4px 0}
+input[type=search]{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;margin-bottom:12px}
+table{width:100%;border-collapse:collapse}
+td,th{text-align:left;vertical-align:top;padding:8px 10px;border-top:1px solid var(--line)}
+th{border-top:0;color:var(--muted);font-weight:600;font-size:13px}
+td:first-child{width:34%;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:13.5px}
+.tblwrap{overflow-x:auto}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Структура IFC — мини-справочник</h1>
+  <p>Слева — как устроен файл на примере дома, справа — что это значит по-русски. Нажмите на любую строку.</p>
+</header>
+<div class="tabs">
+  <button data-tab="tree" class="on">Структура файла</button>
+  <button data-tab="gid">Главное про GlobalId</button>
+  <button data-tab="dict">Словарик</button>
+</div>
+<main>
+  <section id="tab-tree">
+    <div class="grid">
+      <div class="card tree" id="tree"></div>
+      <div class="card sticky" id="info"></div>
+    </div>
+    <p class="hint">Зелёная метка — у объекта есть свой GlobalId. Жёлтая — GlobalId нет и быть не должно.</p>
+  </section>
+
+  <section id="tab-gid" hidden>
+    <div class="card key">
+      <h2>GlobalId простыми словами</h2>
+      <p class="sub">Это «паспортный номер» объекта: 22 символа, например <code>2O2Fr$t4X7Zf8NOew3FLOH</code>.</p>
+      <ul>
+        <li><b>У кого есть.</b> У всего «самостоятельного»: проект, участок, здание, этаж, элемент (стена, плита, помещение), тип элемента, набор свойств, связь.</li>
+        <li><b>У кого нет.</b> У «деталей» внутри объекта: отдельное свойство в наборе, материал, геометрия, координаты, сведения об авторе. Это нормально, а не ошибка.</li>
+        <li><b>Обязателен ли.</b> По стандарту да. В криво выгруженном файле может оказаться пустым, поэтому программа не должна на этом падать.</li>
+        <li><b>Уникален ли.</b> Должен быть уникален во всём комплекте файлов. На деле повторы бывают: скопировали элемент, размножили этаж, один и тот же объект выгрузили в два файла.</li>
+        <li><b>Не путать с номером строки.</b> <code>#120</code> в начале строки файла — это просто порядковый номер записи. Он меняется при каждой выгрузке. GlobalId остаётся тем же, пока элемент жив в модели.</li>
+        <li><b>Чей GlobalId полезен человеку.</b> Только элемента: по нему стену можно найти в Revit, ArchiCAD, Renga или во вьюере. Набор свойств или связь по GlobalId в программе не найти.</li>
+      </ul>
+      <pre>#120 = IFCWALL('2O2Fr$t4X7Zf8NOew3FLOH', #5, 'Стена-001', $, $, #110, #115, 'Tag-77', .STANDARD.);
+ │        │      │                         │    │            │   │    │      │         └ PredefinedType — разновидность
+ │        │      │                         │    │            │   │    │      └ Tag — марка / id в исходной программе
+ │        │      │                         │    │            │   │    └ Representation — ссылка на геометрию
+ │        │      │                         │    │            │   └ ObjectPlacement — ссылка на положение
+ │        │      │                         │    │            └ ObjectType — тип текстом (здесь пусто: $)
+ │        │      │                         │    └ Name — имя
+ │        │      │                         └ OwnerHistory — кто и чем создал
+ │        │      └ GlobalId
+ │        └ класс
+ └ номер строки</pre>
+      <div class="note">Знак <code>$</code> в файле означает «пусто». Ссылка вида <code>#110</code> — «смотри запись с этим номером».</div>
+    </div>
+  </section>
+
+  <section id="tab-dict" hidden>
+    <div class="card">
+      <input type="search" id="q" placeholder="Поиск: GlobalId, набор, тип, связь…">
+      <div class="tblwrap"><table id="dict"><thead><tr><th>Термин</th><th>Что это</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const Y=true,N=false;
+const TREE=[
+{t:'Дом_АР.ifc',ru:'файл модели',d:'Один файл в формате IFC. Внутри — обычный текст: шапка и длинный список записей, каждая на своей строке. Записи ссылаются друг на друга по номерам строк, так и получается «дерево».',ch:[
+ {t:'HEADER',ru:'шапка файла',g:N,d:'Служебные сведения: имя файла, дата, программа-автор и версия схемы (IFC2x3 или IFC4). Модели здесь нет.',ex:"FILE_NAME('Дом_АР.ifc','2026-10-06T10:00:00',...);\nFILE_SCHEMA(('IFC4'));"},
+ {t:'IfcProject',ru:'проект',g:Y,d:'Корень всего. Один на файл. Хранит имя проекта и единицы измерения (метры или миллиметры, градусы). Всё остальное так или иначе вложено в него.',ch:[
+  {t:'IfcUnitAssignment',ru:'единицы измерения',g:N,d:'В чём записаны длины, площади, объёмы. Важно для проверок: число 3000 может быть и миллиметрами, и метрами.'},
+  {t:'IfcSite',ru:'участок',g:Y,d:'Земельный участок. В архитектурном файле обычно пустая «обёртка» для здания. В файле планировочной схемы у него есть свои свойства: кадастровый номер, ГПЗУ и т. п.',ch:[
+   {t:'IfcBuilding',ru:'здание',g:Y,d:'Здание или корпус. Контейнер для этажей.',ch:[
+    {t:'IfcBuildingStorey «01 этаж»',ru:'этаж (уровень)',g:Y,d:'Этаж. У него есть имя (<code>Name</code>) и отметка (<code>Elevation</code>). Элементы «лежат» на этажах.',ch:[
+     {t:'IfcWall «Стена-001»',ru:'элемент: стена',g:Y,d:'Конкретная стена в модели. Это <b>экземпляр</b>: у него своё место, своя геометрия и свой GlobalId. Так же устроены плиты, двери, окна, колонны.',ex:"#120 = IFCWALL('2O2Fr$t4X7Zf8NOew3FLOH', #5, 'Стена-001', $, $, #110, #115, 'Tag-77', .STANDARD.);",ch:[
+      {t:'Атрибуты',ru:'встроенные поля класса',g:N,d:'Поля, которые есть у любого элемента по стандарту. Их набор жёстко задан схемой IFC, добавить своё поле сюда нельзя.',ch:[
+       {t:'GlobalId',ru:'уникальный идентификатор',g:N,d:'22 символа. Не меняется при повторной выгрузке, пока элемент существует в модели. Сам по себе GlobalId — это поле, у него своего GlobalId нет.'},
+       {t:'Name',ru:'имя',g:N,d:'Имя элемента. Revit пишет сюда «Семейство:Тип:id», ArchiCAD — ID элемента. Требований к этому полю обычно нет, поэтому в проверках на него опираться опасно.'},
+       {t:'ObjectType',ru:'тип текстом',g:N,d:'Свободная строка с названием типа. Часто дублирует имя типа из программы.'},
+       {t:'PredefinedType',ru:'разновидность из списка',g:N,d:'Значение из закрытого списка стандарта: для стены — STANDARD, PARAPET и т. п.; для рельефа — TERRAIN.'},
+       {t:'Tag',ru:'марка / внутренний id',g:N,d:'Обычно номер элемента в исходной программе.'},
+       {t:'Description',ru:'описание',g:N,d:'Свободный текст. Чаще всего пусто.'}
+      ]},
+      {t:'ObjectPlacement',ru:'положение',g:N,d:'Где элемент стоит: точка и направление осей относительно этажа. Чтобы получить настоящие координаты, положения складываются по цепочке: элемент → этаж → здание → участок.'},
+      {t:'Representation',ru:'геометрия',g:N,d:'Форма элемента: выдавленный контур, набор граней или сетка треугольников. Геометрия записана в локальных координатах элемента, поэтому её всегда читают вместе с положением.'},
+      {t:'IfcWallType «Наружная 400»',ru:'тип элемента',g:Y,d:'Общий «шаблон» для многих одинаковых стен. К элементу привязан связью <code>IfcRelDefinesByType</code>. У типа могут быть свои наборы свойств, и они <b>наследуются</b> всеми элементами этого типа.',ch:[
+       {t:'HasPropertySets',ru:'наборы свойств типа',g:N,d:'Список наборов свойств, записанных прямо у типа. Поле необязательное, часто пустое. Важно: эти наборы приходят не через связь, а отсюда.'}
+      ]},
+      {t:'IfcPropertySet «RusSet_Common»',ru:'набор свойств',g:Y,d:'Именованная «папка» со свойствами. К элементу привязана связью <code>IfcRelDefinesByProperties</code>. Один и тот же набор может быть привязан сразу к тысяче элементов.<div class="note">У набора есть свой GlobalId, но человеку он бесполезен: в программе набор по нему не найти. Набор опознают по имени.</div>',ch:[
+       {t:'IfcPropertySingleValue RUS_Name',ru:'свойство: имя = значение',g:N,d:'Одно свойство: имя <code>RUS_Name</code> и значение «Стена наружная». GlobalId у свойства нет. Свойство опознают по паре «имя набора + имя свойства».',ex:"#310 = IFCPROPERTYSINGLEVALUE('RUS_Name', $, IFCTEXT('Стена наружная'), $);"},
+       {t:'IfcPropertyEnumeratedValue',ru:'свойство: выбор из списка',g:N,d:'Значение выбрано из заранее заданного перечня вариантов.'},
+       {t:'IfcPropertyListValue',ru:'свойство: список значений',g:N,d:'В одном свойстве сразу несколько значений.'}
+      ]},
+      {t:'IfcPropertySet «Pset_WallCommon»',ru:'стандартный набор свойств',g:Y,d:'Набор из самого стандарта IFC: имя начинается с <code>Pset_</code>. Его пишет программа автоматически (несущая, наружная, огнестойкость).'},
+      {t:'IfcElementQuantity «Qto_WallBaseQuantities»',ru:'набор количеств',g:Y,d:'Похоже на набор свойств, но внутри только числа-количества: длина, площадь, объём. Имя начинается с <code>Qto_</code>. Привязывается той же связью, что и наборы свойств, поэтому в проверках свойств его нужно отсеивать.',ch:[
+       {t:'IfcQuantityArea NetSideArea',ru:'количество: площадь',g:N,d:'Одно число с единицей измерения. GlobalId нет.'}
+      ]},
+      {t:'IfcMaterial',ru:'материал',g:N,d:'Материал или «пирог» слоёв. Привязан связью <code>IfcRelAssociatesMaterial</code>. GlobalId нет.'}
+     ]},
+     {t:'IfcSpace «Квартира 12»',ru:'помещение / зона',g:Y,d:'Объём пространства: комната, квартира, зона для подсчёта площади. Устроен как элемент: свои атрибуты, геометрия, наборы свойств.'},
+     {t:'IfcSlab, IfcDoor, IfcWindow, IfcColumn…',ru:'другие элементы',g:Y,d:'Плиты, двери, окна, колонны и т. д. Устроены так же, как стена: атрибуты, положение, геометрия, тип, наборы свойств.'},
+     {t:'IfcBuildingElementProxy',ru:'элемент «без класса»',g:Y,d:'Запасной класс: сюда программа выгружает всё, для чего не нашла подходящего класса. Часто признак того, что класс при экспорте не настроили.'}
+    ]}
+   ]}
+  ]}
+ ]},
+ {t:'IfcRel… (связи)',ru:'кто с кем связан',g:Y,d:'Вложенность в IFC — не настоящие «папки». Объекты лежат в файле одним плоским списком, а отношения между ними записаны отдельными объектами-связями. У каждой связи свой GlobalId.',ch:[
+  {t:'IfcRelAggregates',ru:'«состоит из»',g:Y,d:'Проект состоит из участка, участок — из здания, здание — из этажей.'},
+  {t:'IfcRelContainedInSpatialStructure',ru:'«находится на»',g:Y,d:'Элементы находятся на этаже (или прямо на участке).'},
+  {t:'IfcRelDefinesByProperties',ru:'«у элементов есть набор»',g:Y,d:'Связывает набор свойств с элементами.<br><b>RelatedObjects</b> — список элементов.<br><b>RelatingPropertyDefinition</b> — набор. Поле обязательное.<div class="note">В IFC4 здесь может стоять не один набор, а сразу список наборов. И это может быть не набор свойств, а набор количеств (Qto).</div>',ex:"#400 = IFCRELDEFINESBYPROPERTIES('1kTvXnbbzCWw8lcMd1dR4o', #5, $, $, (#120,#121,#122), #300);"},
+  {t:'IfcRelDefinesByType',ru:'«элементы относятся к типу»',g:Y,d:'Связывает тип с его элементами.'},
+  {t:'IfcRelAssociatesMaterial',ru:'«у элементов такой материал»',g:Y,d:'Связывает материал с элементами.'}
+ ]},
+ {t:'IfcOwnerHistory',ru:'кто и чем создал',g:N,d:'Автор, организация, программа, дата. На эту запись ссылаются почти все объекты.'}
+]},
+{t:'Дом_ПС.ifc',ru:'файл участка (планировочная схема)',d:'Отдельный файл с территорией. Скелет тот же: проект → участок. Этажей нет, элементы лежат прямо на участке.',ch:[
+ {t:'IfcSite',ru:'участок',g:Y,d:'Здесь главный объект: у него заполняются сведения об участке.',ch:[
+  {t:'IfcCivilElement',ru:'рельеф, покрытия, газоны',g:Y,d:'Элементы благоустройства: планировочный рельеф, вырез под здание, газоны, площадки, дороги.'},
+  {t:'IfcSpatialZone',ru:'зоны, парковки, пожарные проезды',g:Y,d:'Объёмы условной высоты: зоны участка, парковочные места, пожарные проезды.'},
+  {t:'IfcExternalSpatialElement',ru:'граница участка',g:Y,d:'Граница земельного участка в виде вертикальной поверхности.'},
+  {t:'IfcGeographicElement',ru:'рельеф (как выгружают программы)',g:Y,d:'Сюда программы часто выгружают рельеф по умолчанию, с разновидностью TERRAIN.'}
+ ]}
+]}
+];
+
+const DICT=[
+['GlobalId','«Паспортный номер» объекта, 22 символа. Есть у самостоятельных объектов, не меняется между выгрузками.'],
+['#120 (номер строки)','Порядковый номер записи в файле. Нужен только для ссылок внутри файла, при новой выгрузке меняется. Не идентификатор элемента.'],
+['$','В тексте файла означает «значение не задано».'],
+['Entity, класс','Вид объекта: <code>IfcWall</code> — стена, <code>IfcSlab</code> — плита. Имена классов начинаются с Ifc.'],
+['Instance, экземпляр','Конкретный объект модели: вот эта стена на 3 этаже.'],
+['IfcRoot','Общий «предок» всех объектов, у которых есть GlobalId, имя и описание. Если класс от него происходит — GlobalId есть.'],
+['Attribute, атрибут','Встроенное поле класса по стандарту: Name, GlobalId, PredefinedType. Свои поля добавить нельзя.'],
+['Property, свойство','Пользовательская пара «имя = значение». Лежит в наборе свойств. В нормативных требованиях свойства часто тоже называют «атрибутами» — отсюда путаница.'],
+['Property set, Pset, набор свойств','Именованная группа свойств (<code>IfcPropertySet</code>). Привязывается к элементам связью.'],
+['Pset_…','Наборы из стандарта IFC. Пишутся программой автоматически.'],
+['Qto_…','Наборы количеств (<code>IfcElementQuantity</code>): длины, площади, объёмы.'],
+['RusSet_…','Наборы свойств по отечественным требованиям. Свойства внутри начинаются с <code>RUS_</code>.'],
+['Type, тип','Общий шаблон для одинаковых элементов (<code>IfcWallType</code>). Свойства типа наследуют все его элементы.'],
+['Relationship, связь','Отдельный объект <code>IfcRel…</code>, который говорит: «это относится к тому».'],
+['IfcRelDefinesByProperties','Связь «у этих элементов есть этот набор свойств».'],
+['RelatedObjects','В связи: список элементов, к которым она относится.'],
+['RelatingPropertyDefinition','В связи: набор, который привязывается. В IFC4 может быть списком наборов.'],
+['IfcRelDefinesByType','Связь «эти элементы относятся к этому типу».'],
+['HasPropertySets','Поле типа: его собственные наборы свойств. Необязательное.'],
+['Spatial structure','Пространственный «скелет»: проект → участок → здание → этаж.'],
+['IfcProject / IfcSite / IfcBuilding / IfcBuildingStorey','Проект / участок / здание / этаж.'],
+['IfcSpace','Помещение или зона.'],
+['IfcBuildingElementProxy','Элемент без подходящего класса, «прочее».'],
+['ObjectPlacement','Положение элемента относительно этажа или участка.'],
+['Representation','Геометрия элемента.'],
+['PredefinedType','Разновидность из закрытого списка стандарта.'],
+['ObjectType','Название типа свободным текстом.'],
+['Tag','Марка или внутренний номер элемента в исходной программе.'],
+['IfcOwnerHistory','Кто, когда и какой программой создал объект.'],
+['IFC2x3 / IFC4','Версии стандарта. В IFC4 больше классов и есть списки наборов в связях.'],
+['STEP, .ifc','Текстовый формат файла: шапка HEADER и раздел DATA со строками вида <code>#N = КЛАСС(...);</code>'],
+['MVD','«Вид модели»: договорённость, какую часть стандарта выгружать. Задаётся в настройках экспорта.']
+];
+
+// ---------- дерево
+const flat=[];
+function build(nodes,depth){
+  const ul=document.createElement('ul');
+  nodes.forEach(n=>{
+    const li=document.createElement('li');
+    const row=document.createElement('div');row.className='row';
+    const tw=document.createElement('span');tw.className='tw';tw.textContent=n.ch?'▾':'·';
+    const nm=document.createElement('span');nm.textContent=n.t;
+    const ru=document.createElement('span');ru.className='ru';ru.textContent='— '+n.ru;
+    row.append(tw,nm,ru);
+    if(n.g===true||n.g===false){const b=document.createElement('span');b.className='b '+(n.g?'y':'n');b.textContent=n.g?'GlobalId есть':'GlobalId нет';row.append(b);}
+    li.append(row);
+    if(n.ch){li.append(build(n.ch,depth+1)); if(depth>=5){li.classList.add('closed');tw.textContent='▸';}}
+    tw.addEventListener('click',e=>{if(!n.ch)return;e.stopPropagation();li.classList.toggle('closed');tw.textContent=li.classList.contains('closed')?'▸':'▾';});
+    row.addEventListener('click',()=>show(n,row));
+    flat.push([n,row]);
+    ul.append(li);
+  });
+  return ul;
+}
+function show(n,row){
+  document.querySelectorAll('.row.sel').forEach(r=>r.classList.remove('sel'));
+  row.classList.add('sel');
+  const g=n.g===true?'<span class="b y">GlobalId есть</span>':n.g===false?'<span class="b n">GlobalId нет</span>':'';
+  const kids=n.ch?'<p class="hint">Внутри: '+n.ch.map(c=>c.t.split(' ')[0]).join(', ')+'</p>':'';
+  document.getElementById('info').innerHTML='<h2>'+esc(n.t)+'</h2><p class="sub">'+esc(n.ru)+' '+g+'</p><div>'+n.d+'</div>'+(n.ex?'<pre>'+esc(n.ex)+'</pre>':'')+kids;
+}
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+document.getElementById('tree').append(build(TREE,0));
+const start=flat.find(x=>x[0].t.startsWith('IfcWall «'));
+show(start[0],start[1]);
+
+// ---------- словарик
+const tb=document.querySelector('#dict tbody');
+function drawDict(q){
+  q=(q||'').toLowerCase();
+  tb.innerHTML=DICT.filter(r=>!q||(r[0]+' '+r[1]).toLowerCase().includes(q)).map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+r[1]+'</td></tr>').join('')||'<tr><td colspan="2">Ничего не найдено</td></tr>';
+}
+drawDict('');
+document.getElementById('q').addEventListener('input',e=>drawDict(e.target.value));
+
+// ---------- вкладки
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  ['tree','gid','dict'].forEach(t=>document.getElementById('tab-'+t).hidden=(t!==b.dataset.tab));
+}));
+</script>
+</body>
+</html>
