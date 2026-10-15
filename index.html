@@ -80,8 +80,7 @@ td:first-child{width:34%;font-family:ui-monospace,Consolas,Menlo,monospace;font-
 </header>
 <div class="tabs">
   <button data-tab="tree" class="on">Структура файла</button>
-  <button data-tab="gid">Главное про GlobalId</button>
-  <button data-tab="dict">Словарик</button>
+  <button data-tab="dict">Словарь</button>
 </div>
 <main>
   <section id="tab-tree">
@@ -90,35 +89,6 @@ td:first-child{width:34%;font-family:ui-monospace,Consolas,Menlo,monospace;font-
       <div class="card sticky" id="info"></div>
     </div>
     <p class="hint">Зелёная метка — у объекта есть свой GlobalId. Жёлтая — GlobalId нет и быть не должно. В примере кода яркая строка — та, о которой идёт речь; тусклые — её соседи в файле.</p>
-  </section>
-
-  <section id="tab-gid" hidden>
-    <div class="card key">
-      <h2>GlobalId простыми словами</h2>
-      <p class="sub">Это «паспортный номер» объекта: 22 символа, например <code>2O2Fr$t4X7Zf8NOew3FLOH</code>.</p>
-      <ul>
-        <li><b>У кого есть.</b> У всего «самостоятельного»: проект, участок, здание, этаж, элемент (стена, плита, помещение), тип элемента, набор свойств, связь.</li>
-        <li><b>У кого нет.</b> У «деталей» внутри объекта: отдельное свойство в наборе, материал, геометрия, координаты, сведения об авторе. Это нормально, а не ошибка.</li>
-        <li><b>Обязателен ли.</b> По стандарту да. В криво выгруженном файле может оказаться пустым.</li>
-        <li><b>Уникален ли.</b> Должен быть уникален во всём комплекте файлов. На деле повторы бывают: скопировали элемент, размножили этаж, один и тот же объект выгрузили в два файла.</li>
-        <li><b>Не путать с номером строки.</b> <code>#120</code> в начале строки файла — это просто порядковый номер записи. Он меняется при каждой выгрузке. GlobalId остаётся тем же, пока элемент жив в модели.</li>
-        <li><b>GUID и GlobalId.</b> Один и тот же идентификатор в двух записях: GUID — обычная запись из 36 символов с дефисами, GlobalId — он же, сжатый до 22 символов по правилам IFC. У программ есть ещё свои внутренние номера (в Revit — UniqueId и ElementId), они с GlobalId не совпадают.</li>
-        <li><b>Чей GlobalId полезен человеку.</b> Только элемента: по нему стену можно найти в Revit, ArchiCAD, Renga или во вьюере. Набор свойств или связь по GlobalId в программе не найти.</li>
-      </ul>
-      <pre class="plain">#120=IFCWALL('2O2Fr$t4X7Zf8NOew3FLOH',#5,'Стена-001',$,'Наружная 400',#110,#115,'Tag-77',.STANDARD.);
- │      │     │                         │   │          │  │             │    │    │        └ PredefinedType — разновидность
- │      │     │                         │   │          │  │             │    │    └ Tag — марка / id в исходной программе
- │      │     │                         │   │          │  │             │    └ Representation — ссылка на геометрию
- │      │     │                         │   │          │  │             └ ObjectPlacement — ссылка на положение
- │      │     │                         │   │          │  └ ObjectType — тип текстом
- │      │     │                         │   │          └ Description — описание (пусто)
- │      │     │                         │   └ Name — имя
- │      │     │                         └ OwnerHistory — кто и чем создал
- │      │     └ GlobalId
- │      └ класс
- └ номер строки</pre>
-      <div class="note">Знак <code>$</code> в файле означает «пусто». Ссылка вида <code>#110</code> — «смотри запись с этим номером».</div>
-    </div>
   </section>
 
   <section id="tab-dict" hidden>
@@ -372,7 +342,7 @@ BLOCKS.forEach((b,i)=>{
 const start=flat.find(x=>x[0].t.startsWith('IfcRelDefinesByProperties'));
 show(start[0],start[1]);
 
-// ---------- словарик
+// ---------- словарь
 const tb=document.querySelector('#dict tbody');
 function drawDict(q){
   q=(q||'').toLowerCase();
@@ -384,7 +354,7 @@ document.getElementById('q').addEventListener('input',e=>drawDict(e.target.value
 // ---------- вкладки
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
-  ['tree','gid','dict'].forEach(t=>document.getElementById('tab-'+t).hidden=(t!==b.dataset.tab));
+  ['tree','dict'].forEach(t=>document.getElementById('tab-'+t).hidden=(t!==b.dataset.tab));
 }));
 </script>
 </body>
